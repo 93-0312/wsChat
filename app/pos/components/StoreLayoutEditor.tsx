@@ -20,12 +20,12 @@ const TableShape = ({
   onChange,
   onDelete 
 }) => {
-  const groupRef = useRef(null);
-  const shapeRef = useRef(null);
-  const textRef = useRef(null);
-  const trRef = useRef(null);
+  const groupRef = useRef();
+  const shapeRef = useRef();
+  const textRef = useRef();
+  const trRef = useRef();
 
-  // 격자에 맞춰 좌표 정렬 헬퍼 함수
+  // 격자에 맞춰 좌표 정렬 헬퍼 함수 (단일 값용)
   const snapToGrid = useCallback((value) => Math.round(value / GRID_SIZE) * GRID_SIZE, []);
 
   // 선택된 테이블에 Transformer 연결 및 업데이트
@@ -45,12 +45,12 @@ const TableShape = ({
     const scaleY = node.scaleY();
 
     // 새로운 크기 계산 (최소 GRID_SIZE를 유지하며 격자에 스냅)
-    let newWidth = Math.max(GRID_SIZE, snapToGrid(table.width * scaleX));
-    let newHeight = Math.max(GRID_SIZE, snapToGrid(table.height * scaleY));
+    let newWidth = Math.max(GRID_SIZE, Math.round((table.width * scaleX) / GRID_SIZE) * GRID_SIZE);
+    let newHeight = Math.max(GRID_SIZE, Math.round((table.height * scaleY) / GRID_SIZE) * GRID_SIZE);
     
     // 새로운 위치 계산
-    let newX = snapToGrid(node.x());
-    let newY = snapToGrid(node.y());
+    let newX = Math.round(node.x() / GRID_SIZE) * GRID_SIZE;
+    let newY = Math.round(node.y() / GRID_SIZE) * GRID_SIZE;
 
     // 캔버스 경계를 벗어나지 않도록 위치 조정 (BOUNDARY_PADDING 적용)
     // 오른쪽 경계
@@ -61,12 +61,12 @@ const TableShape = ({
     // 아래쪽 경계
     if (newY + newHeight > STAGE_HEIGHT - BOUNDARY_PADDING) {
         newHeight = STAGE_HEIGHT - BOUNDARY_PADDING - newY;
-        newHeight = snapToGrid(Math.max(GRID_SIZE, newHeight)); // 최소 크기 보장
+        newHeight = Math.round(Math.max(GRID_SIZE, newHeight) / GRID_SIZE) * GRID_SIZE; // 최소 크기 보장
     }
 
     // 왼쪽/위쪽 경계 (0보다 작아지지 않도록)
-    newX = snapToGrid(Math.max(0, newX));
-    newY = snapToGrid(Math.max(0, newY));
+    newX = Math.round(Math.max(0, newX) / GRID_SIZE) * GRID_SIZE;
+    newY = Math.round(Math.max(0, newY) / GRID_SIZE) * GRID_SIZE;
 
     // 스케일 리셋
     node.scaleX(1);
@@ -96,7 +96,7 @@ const TableShape = ({
       width: newWidth,
       height: newHeight,
     });
-  }, [table, onChange, snapToGrid]);
+  }, [table, onChange]);
 
   // 드래그 중 실시간으로 위치 제한 및 격자 스냅 적용
   const handleDragMove = useCallback((e) => {
@@ -109,13 +109,13 @@ const TableShape = ({
     newY = Math.max(0, Math.min(STAGE_HEIGHT - table.height - BOUNDARY_PADDING, newY));
 
     // 격자에 맞춰 스냅
-    newX = snapToGrid(newX);
-    newY = snapToGrid(newY);
+    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
     // Konva 노드의 위치를 직접 업데이트하여 실시간으로 경계를 유지
     node.x(newX);
     node.y(newY);
-  }, [table.width, table.height, snapToGrid]);
+  }, [table.width, table.height]);
 
   // 드래그 종료 시 최종 위치를 React 상태에 반영
   const handleDragEnd = useCallback((e) => {
@@ -178,43 +178,7 @@ const TableShape = ({
             if (newBox.width < GRID_SIZE || newBox.height < GRID_SIZE) {
               return oldBox;
             }
-
-            // 캔버스 경계를 벗어나지 않도록 제한 (BOUNDARY_PADDING 적용)
-            let newX = newBox.x;
-            let newY = newBox.y;
-            let newWidth = newBox.width;
-            let newHeight = newBox.height;
-
-            // 오른쪽 경계
-            if (newX + newWidth > STAGE_WIDTH - BOUNDARY_PADDING) {
-                newWidth = STAGE_WIDTH - BOUNDARY_PADDING - newX;
-            }
-            // 아래쪽 경계
-            if (newY + newHeight > STAGE_HEIGHT - BOUNDARY_PADDING) {
-                newHeight = STAGE_HEIGHT - BOUNDARY_PADDING - newY;
-            }
-
-            // 왼쪽/위쪽 경계
-            newX = Math.max(0, newX);
-            newY = Math.max(0, newY);
-
-            // 최종적으로 스냅 처리 (Transforming 중에도 시각적으로 격자에 맞도록)
-            newX = snapToGrid(newX);
-            newY = snapToGrid(newY);
-            newWidth = snapToGrid(newWidth);
-            newHeight = snapToGrid(newHeight);
-
-            // 최소 크기 다시 확인
-            newWidth = Math.max(GRID_SIZE, newWidth);
-            newHeight = Math.max(GRID_SIZE, newHeight);
-
-
-            return {
-                x: newX,
-                y: newY,
-                width: newWidth,
-                height: newHeight,
-            };
+            return newBox;
           }}
           // 크기 조절 앵커 지정 (모든 방향에서 가능)
           enabledAnchors={[
@@ -298,7 +262,7 @@ const StoreLayoutEditor = () => {
     y: Math.round(y / GRID_SIZE) * GRID_SIZE,
   }), []);
 
-  // 단일 값용 격자 스냅 함수 추가
+  // 단일 값용 격자 스냅 함수 추가 (그리기용)
   const snapValue = useCallback((value) => Math.round(value / GRID_SIZE) * GRID_SIZE, []);
 
   // 새 테이블 추가 (버튼 클릭 시)
@@ -556,18 +520,16 @@ const StoreLayoutEditor = () => {
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setMode('select')}
-                className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm ${
-                  mode === 'select' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                }`}
+                                          className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center gap-2"
+
               >
                 <Move className="w-4 h-4" />
                 선택
               </button>
               <button
                 onClick={() => setMode('draw')}
-                className={`px-3 py-2 rounded-md flex items-center gap-2 text-sm ${
-                  mode === 'draw' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                }`}
+                             className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center gap-2"
+
               >
                 <Square className="w-4 h-4" />
                 그리기
