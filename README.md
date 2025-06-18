@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+🛒 WebPOS Demo
+Konva.js와 Next.js를 활용한 터치스크린 기반 포스기(POS) 데모 애플리케이션입니다.
+✨ 주요 기능
 
-## Getting Started
+🎨 Konva.js 기반 터치 인터페이스: 직관적이고 반응성 높은 터치 UI
+🛍️ 상품 관리: 상품 추가, 수정, 삭제 및 재고 관리
+🧾 주문 처리: 실시간 주문 생성 및 결제 처리
+📊 매출 대시보드: 일일/주간/월간 매출 통계
+👆 터치 최적화: 태블릿 및 터치스크린 디바이스 완벽 지원
+⚡ 실시간 업데이트: 빠른 성능과 즉시 반영되는 UI
 
-First, run the development server:
+🛠️ 기술 스택
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Frontend: Next.js 14, TypeScript
+Canvas: Konva.js, React-Konva
+UI/UX: Tailwind CSS 
+상태 관리: Zustand 
+배포: Vercel
+ 
+🚀 빠른 시작
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+필수 요구사항
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Node.js 18.0 이상
+npm 또는 yarn
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+📄 라이선스
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 LICENSE 파일을 참조하세요.
 
-## Learn More
+🙏 감사의 말
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Konva.js - 강력한 2D 캔버스 라이브러리
+Next.js - 뛰어난 React 프레임워크
+Tailwind CSS - 유틸리티 기반 CSS 프레임워크
