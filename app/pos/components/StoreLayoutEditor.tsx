@@ -342,7 +342,9 @@ const StoreLayoutEditor = () => {
   const handleStageMouseDown = useCallback((e) => {
     if (e.target !== e.target.getStage()) return;
     
-    const pos = e.target.getPointerPosition();
+    // Stage 객체에서 포인터 위치 가져오기 (안전한 방법)
+    const stage = e.target.getStage();
+    const pos = stage.getPointerPosition();
     const snappedPos = snapToGrid(pos.x, pos.y);
     
     if (mode === 'draw') {
@@ -366,7 +368,9 @@ const StoreLayoutEditor = () => {
   const handleStageMouseMove = useCallback((e) => {
     if (!isDrawing || !startPos) return;
 
-    const rawPos = e.target.getPointerPosition();
+    // Stage 객체에서 포인터 위치 가져오기 (안전한 방법)
+    const stage = e.target.getStage();
+    const rawPos = stage.getPointerPosition();
     const clampedRawX = Math.max(0, Math.min(STAGE_WIDTH - BOUNDARY_PADDING, rawPos.x));
     const clampedRawY = Math.max(0, Math.min(STAGE_HEIGHT - BOUNDARY_PADDING, rawPos.y));
 
