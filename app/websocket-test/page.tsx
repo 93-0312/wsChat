@@ -11,6 +11,7 @@ const WebSocketTest = () => {
   const [isJoined, setIsJoined] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [showUserList, setShowUserList] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const socketRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -69,6 +70,17 @@ const WebSocketTest = () => {
         setOnlineUsers(users)
       })
 
+      // 강퇴 알림
+      socketRef.current.on('kicked', (data: any) => {
+        alert(`관리자에 의해 강퇴되었습니다: ${data.reason || '규칙 위반'}`)
+        disconnect()
+      })
+
+      // 강퇴 성공 알림
+      socketRef.current.on('kickSuccess', (data: any) => {
+        addMessage(`${data.username}님이 강퇴되었습니다.`, 'system')
+      })
+
     } catch (error) {
       console.error('Socket 연결 실패:', error)
     }
@@ -77,9 +89,13 @@ const WebSocketTest = () => {
   // 채팅방 입장
   const joinChat = async () => {
     if (username.trim()) {
+      // 관리자 체크 (예: 'admin'으로 시작하는 이름)
+      const adminCheck = username.toLowerCase().startsWith('admin')
+      setIsAdmin(adminCheck)
+      
       await connectWebSocket()
       if (socketRef.current) {
-        socketRef.current.emit('join', { username })
+        socketRef.current.emit('join', { username, isAdmin: adminCheck })
         setIsJoined(true)
       }
     }
@@ -111,6 +127,31 @@ const WebSocketTest = () => {
     }
   }
 
+  // 사용자 강퇴
+  const kickUser = (targetUsername: string) => {
+    if (isAdmin && socketRef.current) {
+      const reason = prompt(`${targetUsername}님을 강퇴하는 이유를 입력하세요:`)
+      if (reason !== null) {
+        socketRef.current.emit('kickUser', { 
+          targetUsername, 
+          reason: reason || '규칙 위반' 
+        })
+      }
+    }
+  }
+
+  // 개별 메시지 복사
+  const copyMessage = (text: string, event: any) => {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target as HTMLElement
+      const originalText = btn.textContent
+      btn.textContent = '✓'
+      setTimeout(() => btn.textContent = '📋', 1000)
+    }).catch(() => {
+      alert('복사에 실패했습니다.')
+    })
+  }
+
   // 연결 해제
   const disconnect = () => {
     if (socketRef.current) {
@@ -118,7 +159,9 @@ const WebSocketTest = () => {
       setIsConnected(false)
       setIsJoined(false)
       setMessages([])
-      addMessage('채팅방에서 나갔습니다.', 'system')
+      setOnlineUsers([])
+      setShowUserList(false)
+      setIsAdmin(false)
     }
   }
 
@@ -131,7 +174,7 @@ const WebSocketTest = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              사용자명
+              사용자명 (관리자는 'admin'으로 시작)
             </label>
             <input
               type="text"
@@ -139,7 +182,7 @@ const WebSocketTest = () => {
               onChange={(e) => setUsername(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="사용자명을 입력하세요"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
           <button
@@ -161,7 +204,7 @@ const WebSocketTest = () => {
         <div>
           <h2 className="text-xl font-bold">Next.js WebSocket 테스트</h2>
           <p className="text-sm opacity-90">
-            {isConnected ? '🟢 연결됨' : '🔴 연결 끊김'} | {username} | 접속자 {onlineUsers.length}명
+            {isConnected ? '🟢 연결됨' : '🔴 연결 끊김'} | {username} {isAdmin && '👑'} | 접속자 {onlineUsers.length}명
           </p>
         </div>
         <div className="flex space-x-2">
@@ -188,13 +231,25 @@ const WebSocketTest = () => {
             {onlineUsers.map((user, index) => (
               <div 
                 key={index} 
-                className={`text-sm p-2 rounded ${
+                className={`text-sm p-2 rounded flex justify-between items-center ${
                   user === username 
                     ? 'bg-green-100 text-green-800 font-semibold' 
                     : 'bg-gray-50 text-gray-700'
                 }`}
               >
-                {user === username ? `${user} (나)` : user}
+                <span>
+                  {user === username ? `${user} (나)` : user}
+                  {user.toLowerCase().startsWith('admin') && ' 👑'}
+                </span>
+                {isAdmin && user !== username && !user.toLowerCase().startsWith('admin') && (
+                  <button
+                    onClick={() => kickUser(user)}
+                    className="text-red-500 hover:text-red-700 text-xs ml-2"
+                    title="강퇴"
+                  >
+                    ❌
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -235,7 +290,16 @@ const WebSocketTest = () => {
                     {message.sender}
                   </div>
                 )}
-                <div>{message.text}</div>
+                <div className="flex items-center justify-between">
+                  <span className="flex-1">{message.text}</span>
+                  <button
+                    onClick={(e) => copyMessage(message.text, e)}
+                    className="ml-2 text-xs text-gray-500 hover:text-gray-700 p-1"
+                    title="메시지 복사"
+                  >
+                    📋
+                  </button>
+                </div>
                 <div className={`text-xs mt-1 ${
                   message.type === 'user' ? 'text-green-100' : 'text-gray-400'
                 }`}>
@@ -257,7 +321,7 @@ const WebSocketTest = () => {
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="메시지를 입력하세요..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900"
             disabled={!isConnected}
           />
           <button
