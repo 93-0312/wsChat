@@ -9,6 +9,8 @@ const WebSocketTest = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [username, setUsername] = useState('')
   const [isJoined, setIsJoined] = useState(false)
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([])
+  const [showUserList, setShowUserList] = useState(false)
   const socketRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -60,6 +62,11 @@ const WebSocketTest = () => {
         } else {
           addMessage(data.text, 'other', data.username)
         }
+      })
+
+      // 접속자 목록 업데이트
+      socketRef.current.on('userList', (users: string[]) => {
+        setOnlineUsers(users)
       })
 
     } catch (error) {
@@ -148,22 +155,57 @@ const WebSocketTest = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="max-w-2xl mx-auto mt-8 bg-white rounded-lg shadow-lg overflow-hidden relative">
       {/* 헤더 */}
       <div className="bg-green-500 text-white p-4 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold">Next.js WebSocket 테스트</h2>
           <p className="text-sm opacity-90">
-            {isConnected ? '🟢 연결됨' : '🔴 연결 끊김'} | {username}
+            {isConnected ? '🟢 연결됨' : '🔴 연결 끊김'} | {username} | 접속자 {onlineUsers.length}명
           </p>
         </div>
-        <button
-          onClick={disconnect}
-          className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
-        >
-          나가기
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowUserList(!showUserList)}
+            className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-sm"
+          >
+            👥 접속자
+          </button>
+          <button
+            onClick={disconnect}
+            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
+          >
+            나가기
+          </button>
+        </div>
       </div>
+
+      {/* 접속자 목록 모달 */}
+      {showUserList && (
+        <div className="absolute top-16 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-10 min-w-48">
+          <h3 className="font-bold text-gray-800 mb-2">접속자 목록 ({onlineUsers.length}명)</h3>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {onlineUsers.map((user, index) => (
+              <div 
+                key={index} 
+                className={`text-sm p-2 rounded ${
+                  user === username 
+                    ? 'bg-green-100 text-green-800 font-semibold' 
+                    : 'bg-gray-50 text-gray-700'
+                }`}
+              >
+                {user === username ? `${user} (나)` : user}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowUserList(false)}
+            className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+          >
+            닫기
+          </button>
+        </div>
+      )}
 
       {/* 메시지 영역 */}
       <div className="h-96 overflow-y-auto p-4 bg-gray-50">

@@ -3,6 +3,12 @@ import { Server } from 'socket.io'
 
 const users = new Map()
 
+// 접속자 목록 브로드캐스트
+function broadcastUserList(io) {
+  const userList = Array.from(users.values()).map(user => user.username)
+  io.emit('userList', userList)
+}
+
 export default function handler(req, res) {
   if (!res.socket.server.io) {
     console.log('Socket.IO 서버 시작...')
@@ -30,6 +36,8 @@ export default function handler(req, res) {
           timestamp: new Date().toISOString()
         })
 
+        // 접속자 목록 업데이트
+        broadcastUserList(io)
         console.log(`${username} 입장`)
       })
 
@@ -61,6 +69,9 @@ export default function handler(req, res) {
           })
           
           users.delete(socket.id)
+          
+          // 접속자 목록 업데이트
+          broadcastUserList(io)
           console.log(`${user.username} 퇴장`)
         }
       })
